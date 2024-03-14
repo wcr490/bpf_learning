@@ -1,0 +1,118 @@
+[workspace]
+members = [
+  ".",
+  "capi",
+  "cli",
+]
+
+[package]
+name = "blazesym"
+description = "blazesym is a library for address symbolization and related tasks."
+version = "0.2.0-alpha.11"
+edition = "2021"
+rust-version = "1.65"
+authors = ["Daniel Müller <deso@posteo.net>", "Kui-Feng <thinker.li@gmail.com>"]
+license = "BSD-3-Clause"
+repository = "https://github.com/libbpf/blazesym"
+readme = "README.md"
+categories = [
+  "algorithms",
+  "api-bindings",
+  "development-tools::debugging",
+  "os::unix-apis",
+  "value-formatting",
+]
+keywords = [
+  "dwarf",
+  "elf",
+  "gsym",
+  "stacktrace",
+  "tracing",
+]
+exclude = ["data/kallsyms.xz"]
+autobenches = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = [
+  "backtrace",
+  "demangle",
+  "dwarf",
+]
+# Enable this feature to enable APK support (mostly relevant for
+# Android).
+apk = []
+# Enable this feature to compile in support for capturing backtraces in errors.
+# Note that by default backtraces will not be collected unless opted in with
+# environment variables.
+backtrace = []
+# Enable this feature to enable Breakpad support.
+breakpad = ["circular", "nom"]
+# Enable this feature to get transparent symbol demangling.
+demangle = ["cpp_demangle", "rustc-demangle"]
+# Enable this feature to enable DWARF support.
+dwarf = ["gimli"]
+# Enable this feature to enable Gsym support.
+gsym = []
+
+# Below here are dev-mostly features that should not be needed by
+# regular users.
+
+# Enable this feature to opt in to the generation of unit test files.
+# Having these test files created is necessary for running tests.
+generate-unit-test-files = ["dump_syms", "xz2", "zip"]
+# Enable this feature to opt in to the generation of large benchmark
+# files (also used for regression testing).
+generate-large-test-files = ["dump_syms", "reqwest", "xz2"]
+# Disable generation of test files. This feature takes preference over
+# `generate-unit-test-files`.
+dont-generate-unit-test-files = []
+# Enable code paths requiring a nightly toolchain. This feature is only meant to
+# be used for testing and benchmarking purposes, not for the core library, which
+# is expected to work on stable.
+nightly = []
+
+[[bench]]
+name = "main"
+harness = false
+
+[profile.bench]
+debug = true
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[dependencies]
+circular = {version = "0.3", optional = true}
+cpp_demangle = {version = "0.4", optional = true}
+gimli = {version = "0.28", optional = true}
+libc = "0.2.137"
+nom = {version = "7", optional = true}
+rustc-demangle = {version = "0.1.4", optional = true}
+tracing = {version = "0.1.27", default-features = false, features = ["attributes"], optional = true}
+
+[dev-dependencies]
+# For performance comparison; pinned, because we use #[doc(hidden)]
+# APIs.
+addr2line = "=0.21.0"
+anyhow = "1.0.71"
+blazesym = {path = ".", features = ["generate-unit-test-files", "apk", "breakpad", "gsym", "tracing"]}
+# TODO: Use 0.5.2 once released.
+criterion = {git = "https://github.com/bheisler/criterion.rs.git", rev = "b913e232edd98780961ecfbae836ec77ede49259", default-features = false, features = ["rayon", "cargo_bench_support"]}
+scopeguard = "1.2"
+tempfile = "3.4"
+test-log = {version = "0.2.14", default-features = false, features = ["trace"]}
+
+[build-dependencies]
+dump_syms = {version = "2.2", optional = true, default-features = false}
+libc = "0.2.137"
+reqwest = {version = "0.11.18", optional = true, features = ["blocking"]}
+xz2 = {version = "0.1.7", optional = true}
+zip = {version = "0.6.4", optional = true, default-features = false}
+
+# https://docs.rs/about/metadata
+[package.metadata.docs.rs]
+features = ["apk", "backtrace", "breakpad", "demangle", "dwarf", "gsym"]
+# defines the configuration attribute `docsrs`
+rustdoc-args = ["--cfg", "docsrs"]
